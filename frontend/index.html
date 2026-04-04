@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DNS-EXFIL Detector</title>
+    <link rel="stylesheet" href="static/style.css" />
+  </head>
+  <body>
+    <div class="bg-grid"></div>
+
+    <header class="topbar">
+      <div>
+        <div class="brand">DNS-EXFIL</div>
+        <div class="subtitle">PCAP -> Zeek -> Detection</div>
+      </div>
+      <div class="status-pill" id="statusPill">IDLE</div>
+    </header>
+
+    <main class="shell">
+      <section class="panel upload-panel" id="uploadPanel">
+        <div class="dropzone" id="dropZone">
+          <div class="drop-title">Upload PCAP</div>
+          <div class="drop-subtitle">Drop a .pcap or .pcapng file here</div>
+          <label class="choose-btn" for="fileInput">Choose File</label>
+          <input id="fileInput" type="file" accept=".pcap,.pcapng" hidden />
+          <div class="file-name" id="fileName">No file selected</div>
+        </div>
+
+        <button class="run-btn" id="analyzeBtn" disabled>Run Analysis</button>
+      </section>
+
+      <section class="panel hidden" id="progressPanel">
+        <div class="progress-head">Analyzing packet capture</div>
+        <div class="progress-line">
+          <div class="loader"></div>
+          <span id="progressText">Uploading…</span>
+        </div>
+      </section>
+
+      <section class="panel hidden" id="resultsPanel">
+        <div class="summary-grid">
+          <div class="stat">
+            <div class="stat-value" id="metricTotal">—</div>
+            <div class="stat-label">Total Records</div>
+          </div>
+          <div class="stat danger">
+            <div class="stat-value" id="metricSuspicious">—</div>
+            <div class="stat-label">Suspicious</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value mono" id="metricJob">—</div>
+            <div class="stat-label">Job ID</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <input
+            id="filterInput"
+            class="search"
+            placeholder="Filter by query, IP, qtype, reason…"
+          />
+          <button class="ghost-btn" id="resetBtn">New Scan</button>
+        </div>
+
+        <div class="table-wrap">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th>Score</th>
+                <th>Severity</th>
+                <th>Timestamp</th>
+                <th>Source IP</th>
+                <th>QType</th>
+                <th>Query</th>
+                <th>Length</th>
+                <th>Entropy</th>
+                <th>Reasons</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+          <div class="empty hidden" id="noResults">
+            No rows match the filter.
+          </div>
+        </div>
+      </section>
+
+      <section class="panel error hidden" id="errorPanel">
+        <div class="error-title">Analysis failed</div>
+        <div class="error-msg" id="errorMsg"></div>
+        <button class="ghost-btn" id="errorResetBtn">Try Again</button>
+      </section>
+    </main>
+
+    <script src="static/app.js"></script>
+  </body>
+</html>
