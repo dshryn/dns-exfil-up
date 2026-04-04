@@ -3,3 +3,5 @@ venv/
 dataset/
 backend/__pycache__/
 backend/output/
+backend/uploads
+zeek_logs/

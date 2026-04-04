@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 import shutil
 import subprocess
 import time
@@ -75,23 +77,32 @@ def to_wsl_path(path: Path) -> str:
 def run_zeek(pcap_path: Path, job_dir: Path) -> None:
     pcap_linux = to_wsl_path(pcap_path)
     job_linux = to_wsl_path(job_dir)
+    if not pcap_path.exists():
+        raise HTTPException(status_code=500, detail="PCAP file missing before Zeek run")
+
+    ZEEK_PATH = "/opt/zeek/bin/zeek" 
 
     cmd = [
         "wsl",
         "bash",
         "-lc",
-        f'cd "{job_linux}" && zeek -C -r "{pcap_linux}" LogAscii::use_json=T',
+        f'cd "{job_linux}" && {ZEEK_PATH} -C -r "{pcap_linux}" LogAscii::use_json=T',
     ]
 
     print("Running Zeek:", cmd)
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
+    print("ZEek STDOUT:\n", result.stdout)
+    print("ZEek STDERR:\n", result.stderr)
+
     if result.returncode != 0:
         raise HTTPException(
-            status_code=500,
-            detail=f"Zeek failed: {result.stderr or result.stdout}",
-        )
+        status_code=500,
+        detail=f"Zeek failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    )
+    if not pcap_path.exists():
+        raise HTTPException(status_code=500, detail="PCAP file missing before Zeek run")
 
 
 @app.post("/analyze")
@@ -156,4 +167,4 @@ async def analyze_pcap(file: UploadFile = File(...)):
         }
 
     finally:
-        pcap_path.unlink(missing_ok=True)
+        pass

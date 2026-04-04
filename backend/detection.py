@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-
 import joblib
 import numpy as np
 import pandas as pd
@@ -10,17 +9,13 @@ from utils import extract_features
 
 BASE_DIR = Path(__file__).resolve().parent
 
-model = joblib.load(BASE_DIR / "../models/dns_rf_model.pkl")
-scaler = joblib.load(BASE_DIR / "../models/scaler.pkl")
+bundle = joblib.load(BASE_DIR / "../models/dns_rf_model.pkl")
 
-FEATURES = [
-    "length",
-    "num_digits",
-    "num_subdomains",
-    "entropy",
-    "vowel_ratio",
-    "unique_ratio"
-]
+model = bundle["model"]
+scaler = bundle["scaler"]
+FEATURES = bundle["features"]
+
+print("MODEL LOADED WITH FEATURES:", FEATURES)
 
 ALERT_THRESHOLD = 40
 
@@ -39,7 +34,6 @@ def analyze_records(records):
     rows = []
     meta = []
 
-    # 🔥 Extract all features first (BATCH MODE)
     for r in records:
         f = extract_features(r)
         rows.append([f.get(k, 0) for k in FEATURES])
@@ -51,7 +45,9 @@ def analyze_records(records):
     df = pd.DataFrame(rows, columns=FEATURES)
     df = df.apply(pd.to_numeric, errors="coerce").fillna(0.0)
 
-    # 🔥 Single model call (FAST)
+    if list(df.columns) != list(FEATURES):
+        raise ValueError("Feature mismatch between model and input")
+
     X = scaler.transform(df)
     probs = model.predict_proba(X)[:, 1]
 
@@ -63,10 +59,9 @@ def analyze_records(records):
         prob = np.clip(prob, 0.01, 0.99)
         prob = prob ** 0.7
 
-        # Normalize components
-        entropy_score = min(f["entropy"] / 5, 1) * 20        # max 20
-        subdomain_score = min(f["num_subdomains"] / 10, 1) * 20  # max 20
-        ml_score = prob * 60                                  # max 60
+        entropy_score = min(f["entropy"] / 5, 1) * 20
+        subdomain_score = min(f["num_subdomains"] / 10, 1) * 20
+        ml_score = prob * 60
 
         score = round(ml_score + entropy_score + subdomain_score, 2)
 
@@ -83,11 +78,10 @@ def analyze_records(records):
             "entropy": round(f["entropy"], 3),
             "num_subdomains": f["num_subdomains"],
             "length": f["length"],
-            "is_encoded": f["entropy"] > 3.5,   # 🔥 BONUS FEATURE
             "reasons": [
-                f"Entropy: {round(f['entropy'],2)}",
+                f"Entropy: {round(f['entropy'], 2)}",
                 f"Subdomains: {f['num_subdomains']}",
-                f"ML confidence: {round(prob,3)}"
+                f"ML confidence: {round(prob, 3)}"
             ]
         })
 

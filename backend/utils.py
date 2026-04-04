@@ -27,8 +27,6 @@ def clean_query(q):
         return ""
 
     s = str(q)
-
-    # CLEANED VERSION (fix garbage display)
     return "".join(c if c.isalnum() or c in ".-" else "." for c in s)
 
 
@@ -48,31 +46,49 @@ def entropy(s):
     return ent
 
 
-def vowel_ratio(s):
-    if not s:
-        return 0.0
-    return sum(1 for c in s.lower() if c in "aeiou") / len(s)
-
-
-def unique_ratio(s):
-    if not s:
-        return 0.0
-    return len(set(s)) / len(s)
-
-
 def extract_features(record):
     q = clean_query(record.get("query", "")).strip().rstrip(".")
+    raw = q.replace(".", "")
+
+    length = len(q)
+    num_digits = sum(c.isdigit() for c in q)
+    num_subdomains = max(q.count("."), 0)
+
+    ent = entropy(raw)
+
+    vowels = "aeiou"
+    vowel_ratio = sum(c in vowels for c in raw.lower()) / length if length else 0
+    unique_ratio = len(set(raw)) / length if length else 0
+
+    # new features
+    parts = q.split(".") if q else []
+    longest_label = max((len(p) for p in parts), default=0)
+
+    consonant_ratio = sum(
+        c.isalpha() and c not in vowels for c in raw.lower()
+    ) / length if length else 0
+
+    digit_ratio = num_digits / length if length else 0
+
+    special_ratio = sum(not c.isalnum() for c in q) / length if length else 0
+
+    repeated_char_ratio = 1 - (len(set(raw)) / length) if length else 0
 
     qtype = record.get("qtype_name") or f"QTYPE_{record.get('qtype', 0)}"
 
     return {
         "query": q,
-        "length": len(q),
-        "num_digits": sum(c.isdigit() for c in q),
-        "num_subdomains": q.count("."),
-        "entropy": entropy(q.replace(".", "")),
-        "vowel_ratio": vowel_ratio(q.replace(".", "")),
-        "unique_ratio": unique_ratio(q.replace(".", "")),
+        "length": length,
+        "num_digits": num_digits,
+        "num_subdomains": num_subdomains,
+        "entropy": ent,
+        "vowel_ratio": vowel_ratio,
+        "unique_ratio": unique_ratio,
+        "longest_label": longest_label,
+        "consonant_ratio": consonant_ratio,
+        "digit_ratio": digit_ratio,
+        "special_ratio": special_ratio,
+        "repeated_char_ratio": repeated_char_ratio,
         "src_ip": record.get("id.orig_h", "-"),
         "timestamp": record.get("ts"),
         "qtype": qtype,

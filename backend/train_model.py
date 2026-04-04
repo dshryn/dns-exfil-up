@@ -2,18 +2,30 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import (
+    roc_auc_score,
+    average_precision_score,
+    matthews_corrcoef,
+    cohen_kappa_score,
+    log_loss,
+    brier_score_loss,
+    balanced_accuracy_score
+)
 from sklearn.model_selection import train_test_split
 import joblib
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE.parent
+
 DATA_FILE = BASE / "models/dns_dataset.csv"
+MODEL_PATH = PROJECT_ROOT / "models" / "dns_rf_model.pkl"
 
 
 def main():
     df = pd.read_csv(DATA_FILE)
 
-    features = [
+    FEATURES = [
         "length",
         "num_digits",
         "num_subdomains",
@@ -27,10 +39,9 @@ def main():
         "repeated_char_ratio"
     ]
 
-    X = df[features]
+    X = df[FEATURES]
     y = df["label"]
 
-    # split
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42
     )
@@ -49,23 +60,44 @@ def main():
 
     model.fit(X_train_scaled, y_train)
 
+    # store feature names inside model
+    model.feature_names_in_ = FEATURES
+
     y_prob = model.predict_proba(X_test_scaled)[:, 1]
 
     THRESHOLD = 0.65
-
     y_pred = (y_prob >= THRESHOLD).astype(int)
 
-    # print("\nTHRESHOLD USED:", THRESHOLD)
-
-    print("\nClassification metrics:\n")
+    print("\nClassification Report:\n")
     print(classification_report(y_test, y_pred))
 
     print("\nConfusion Matrix:\n")
-    print(confusion_matrix(y_test, y_pred))
+    cm = confusion_matrix(y_test, y_pred)
+    print(cm)
 
-    # joblib
-    joblib.dump(model, BASE / "models/dns_rf_model.pkl")
-    joblib.dump(scaler, BASE / "models/scaler.pkl")
+    tn, fp, fn, tp = cm.ravel()
+
+    print("\nAdvanced Metrics:\n")
+    print("ROC-AUC:", roc_auc_score(y_test, y_prob))
+    print("PR-AUC:", average_precision_score(y_test, y_prob))
+    print("MCC:", matthews_corrcoef(y_test, y_pred))
+    print("Cohen Kappa:", cohen_kappa_score(y_test, y_pred))
+    print("Log Loss:", log_loss(y_test, y_prob))
+    print("Brier Score:", brier_score_loss(y_test, y_prob))
+    print("Balanced Accuracy:", balanced_accuracy_score(y_test, y_pred))
+
+    specificity = tn / (tn + fp) if (tn + fp) else 0
+    print("Specificity:", specificity)
+
+    # save together
+    joblib.dump(
+        {
+            "model": model,
+            "scaler": scaler,
+            "features": FEATURES
+        },
+        MODEL_PATH
+    )
 
     print("\nMODEL SAVED")
 
