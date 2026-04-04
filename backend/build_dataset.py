@@ -24,8 +24,8 @@ def extract_features_from_query(query):
         return None
 
     parts = query.split(".")
-
     length = len(query)
+
     num_digits = sum(c.isdigit() for c in query)
     num_subdomains = max(len(parts) - 2, 0)
 
@@ -33,8 +33,19 @@ def extract_features_from_query(query):
 
     vowels = "aeiou"
     vowel_ratio = sum(c in vowels for c in query.lower()) / length
-
     unique_ratio = len(set(query)) / length
+
+    longest_label = max(len(p) for p in parts)
+
+    consonant_ratio = sum(
+        c.isalpha() and c not in vowels for c in query.lower()
+    ) / length
+
+    digit_ratio = num_digits / length
+
+    special_ratio = sum(not c.isalnum() for c in query) / length
+
+    repeated_char_ratio = 1 - (len(set(query)) / length)
 
     return {
         "length": length,
@@ -42,7 +53,12 @@ def extract_features_from_query(query):
         "num_subdomains": num_subdomains,
         "entropy": entropy,
         "vowel_ratio": vowel_ratio,
-        "unique_ratio": unique_ratio
+        "unique_ratio": unique_ratio,
+        "longest_label": longest_label,
+        "consonant_ratio": consonant_ratio,
+        "digit_ratio": digit_ratio,
+        "special_ratio": special_ratio,
+        "repeated_char_ratio": repeated_char_ratio
     }
 
 
@@ -75,6 +91,9 @@ def process_folder(folder_path, label):
 
 
 def main():
+    print("ATTACK DIR:", ATTACK_DIR)
+    print("BENIGN DIR:", BENIGN_DIR)
+
     print("Processing ATTACK logs...")
     attack_rows = process_folder(ATTACK_DIR, 1)
 
@@ -91,7 +110,7 @@ def main():
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     df.to_csv(OUTPUT_FILE, index=False)
 
-    print(f"Dataset created: {OUTPUT_FILE}")
+    print(f"\nDataset created: {OUTPUT_FILE}")
     print(df["label"].value_counts())
 
 
