@@ -187,3 +187,8 @@ async def analyze_pcap(file: UploadFile = File(...)):
 
     finally:
         pass
+
+@app.get("/check-zeek")
+def check_zeek():
+    import shutil
+    return {"zeek_path": shutil.which("zeek")}
