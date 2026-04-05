@@ -5,7 +5,7 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from utils import extract_features
+from backend.utils import extract_features
 
 BASE_DIR = Path(__file__).resolve().parent
 

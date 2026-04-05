@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from utils import extract_features as build_features
-from utils import parse_dns_log
+from backend.utils import extract_features as build_features
+from backend.utils import parse_dns_log
 
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE_DIR.parent

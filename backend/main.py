@@ -13,8 +13,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from detection import analyze_records
-from utils import parse_dns_log
+from backend.detection import analyze_records
+from backend.utils import parse_dns_log
 
 app = FastAPI(title="DNS Exfiltration Detector")
 
@@ -83,10 +83,11 @@ def run_zeek(pcap_path: Path, job_dir: Path) -> None:
     ZEEK_PATH = "zeek" 
 
     cmd = [
-        ZEEK_PATH,
+        "zeek",
         "-C",
         "-r",
         str(pcap_path.resolve()),
+        f"Log::default_logdir={job_dir}",
         "LogAscii::use_json=T",
     ]
 
@@ -94,12 +95,14 @@ def run_zeek(pcap_path: Path, job_dir: Path) -> None:
     print("Working directory:", job_dir)
 
     try:
+        
         result = subprocess.run(
             cmd,
-            cwd=job_dir,
             capture_output=True,
             text=True,
-            timeout=300
+            timeout=30
+        
+
         )
     except subprocess.TimeoutExpired:
         raise HTTPException(

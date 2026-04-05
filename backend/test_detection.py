@@ -1,8 +1,8 @@
 from pathlib import Path
 import time
 
-from utils import parse_dns_log
-from detection import analyze_records
+from backend.utils import parse_dns_log
+from backend.detection import analyze_records
 
 print("Starting detection...")
 
