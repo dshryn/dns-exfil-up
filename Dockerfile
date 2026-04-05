@@ -2,29 +2,23 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt update && apt install -y \
-    curl \
-    gnupg \
-    lsb-release \
-    python3 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    curl gnupg lsb-release debconf-utils
 
-# install zeek
+RUN echo "postfix postfix/main_mailer_type select No configuration" | debconf-set-selections
+
 RUN echo "deb http://download.opensuse.org/repositories/security:/zeek/xUbuntu_22.04/ /" \
-    > /etc/apt/sources.list.d/zeek.list
+    | tee /etc/apt/sources.list.d/zeek.list
 
 RUN curl -fsSL https://download.opensuse.org/repositories/security:zeek/xUbuntu_22.04/Release.key \
     | gpg --dearmor -o /etc/apt/trusted.gpg.d/zeek.gpg
 
-RUN apt update && apt install -y zeek
-
-ENV PATH="/opt/zeek/bin:${PATH}"
+RUN apt-get update && apt-get install -y zeek python3 python3-pip
 
 WORKDIR /app
 
-COPY backend/ .
+COPY backend /app/backend
 
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install -r /app/backend/requirements.txt
 
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
