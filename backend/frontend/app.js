@@ -90,11 +90,16 @@ async function runAnalysis() {
     progressText.textContent = 'Running Zeek…';
 
     const response = await fetch(`${API_BASE}/analyze`, {
-      method: 'POST',
-      body: formData,
-    });
+  method: 'POST',
+  body: formData,
+});
 
-    const data = await response.json();
+if (!response.ok) {
+  const text = await response.text();  
+  throw new Error(text);
+}
+
+const data = await response.json();
 
     progressText.textContent = 'Parsing DNS records…';
     await sleep(250);

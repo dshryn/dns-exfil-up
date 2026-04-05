@@ -77,13 +77,16 @@ def run_zeek(pcap_path: Path, job_dir: Path) -> None:
     if not pcap_path.exists():
         raise HTTPException(status_code=500, detail="PCAP file missing before Zeek run")
 
+    if shutil.which("zeek") is None:
+        raise HTTPException(status_code=500, detail="Zeek not installed in environment")
+
     ZEEK_PATH = "zeek" 
 
     cmd = [
         ZEEK_PATH,
         "-C",
         "-r",
-        str(pcap_path),
+        str(pcap_path.resolve()),
         "LogAscii::use_json=T",
     ]
 
@@ -109,9 +112,9 @@ def run_zeek(pcap_path: Path, job_dir: Path) -> None:
 
     if result.returncode != 0:
         raise HTTPException(
-            status_code=500,
-            detail=f"Zeek failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
-        )
+    status_code=500,
+    detail=f"Zeek failed. STDERR:\n{result.stderr.strip()}"
+)
 
     if not (job_dir / "dns.log").exists():
         print("Warning: dns.log not generated")
@@ -135,8 +138,12 @@ async def analyze_pcap(file: UploadFile = File(...)):
     zeek_start = time.perf_counter()
 
     try:
+        # with pcap_path.open("wb") as out:
+        #     shutil.copyfileobj(file.file, out)
+
+        content = await file.read()
         with pcap_path.open("wb") as out:
-            shutil.copyfileobj(file.file, out)
+            out.write(content)
 
         run_zeek(pcap_path, job_dir)
         zeek_time = time.perf_counter() - zeek_start
