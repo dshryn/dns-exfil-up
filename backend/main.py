@@ -26,11 +26,11 @@ app.add_middleware(
 )
 
 BASE_DIR = Path(__file__).resolve().parent
-PROJECT_ROOT = BASE_DIR.parent
-FRONTEND_DIR = PROJECT_ROOT / "frontend"
+
+FRONTEND_DIR = BASE_DIR / "frontend"
 
 if not (FRONTEND_DIR / "index.html").exists():
-    raise RuntimeError("Frontend index.html not found")
+    print("WARNING: Frontend not found, API will still run")
 
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "output"
@@ -73,36 +73,48 @@ def to_wsl_path(path: Path) -> str:
 
     return path_str
 
-
 def run_zeek(pcap_path: Path, job_dir: Path) -> None:
-    pcap_linux = to_wsl_path(pcap_path)
-    job_linux = to_wsl_path(job_dir)
     if not pcap_path.exists():
         raise HTTPException(status_code=500, detail="PCAP file missing before Zeek run")
 
-    ZEEK_PATH = "/opt/zeek/bin/zeek" 
+    ZEEK_PATH = "zeek" 
 
     cmd = [
-        "wsl",
-        "bash",
-        "-lc",
-        f'cd "{job_linux}" && {ZEEK_PATH} -C -r "{pcap_linux}" LogAscii::use_json=T',
+        ZEEK_PATH,
+        "-C",
+        "-r",
+        str(pcap_path),
+        "LogAscii::use_json=T",
     ]
 
-    print("Running Zeek:", cmd)
+    print("Running Zeek:", " ".join(cmd))
+    print("Working directory:", job_dir)
 
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=job_dir,
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(
+            status_code=500,
+            detail="Zeek execution timed out"
+        )
 
-    print("ZEek STDOUT:\n", result.stdout)
-    print("ZEek STDERR:\n", result.stderr)
+    print("Zeek STDOUT:\n", result.stdout)
+    print("Zeek STDERR:\n", result.stderr)
 
     if result.returncode != 0:
         raise HTTPException(
-        status_code=500,
-        detail=f"Zeek failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
-    )
-    if not pcap_path.exists():
-        raise HTTPException(status_code=500, detail="PCAP file missing before Zeek run")
+            status_code=500,
+            detail=f"Zeek failed:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+        )
+
+    if not (job_dir / "dns.log").exists():
+        print("Warning: dns.log not generated")
 
 
 @app.post("/analyze")

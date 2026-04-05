@@ -9,7 +9,7 @@ from utils import extract_features
 
 BASE_DIR = Path(__file__).resolve().parent
 
-bundle = joblib.load(BASE_DIR / "../models/dns_rf_model.pkl")
+bundle = joblib.load(BASE_DIR / "models/dns_rf_model.pkl")
 
 model = bundle["model"]
 scaler = bundle["scaler"]
