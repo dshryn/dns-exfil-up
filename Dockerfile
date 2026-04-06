@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/zeek/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-# Install system deps
+# Install dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -28,19 +28,14 @@ RUN curl -fsSL \
 RUN apt-get update && apt-get install -y zeek \
     && rm -rf /var/lib/apt/lists/*
 
-# Force zeek in PATH 
-ENV PATH="/opt/zeek/bin:$PATH"
-
 WORKDIR /app
 
-# Copy backend
+# FORCE CACHE BREAK (important)
 COPY backend /app/backend
+RUN echo "build $(date)" > /build.txt
 
-# Install python deps
+# Install Python deps
 RUN pip3 install --no-cache-dir -r /app/backend/requirements.txt
-
-# Debug
-RUN /opt/zeek/bin/zeek --version
 
 EXPOSE 8080
 
