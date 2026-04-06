@@ -7,6 +7,7 @@ import subprocess
 import time
 import uuid
 from pathlib import Path
+import os
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -77,10 +78,14 @@ def run_zeek(pcap_path: Path, job_dir: Path) -> None:
     if not pcap_path.exists():
         raise HTTPException(status_code=500, detail="PCAP file missing before Zeek run")
 
-    if shutil.which("zeek") is None:
-        raise HTTPException(status_code=500, detail="Zeek not installed in environment")
 
-    ZEEK_PATH = "zeek" 
+    ZEEK_PATH ="/opt/zeek/bin/zeek"
+
+    print("DEBUG: PATH =", os.environ.get("PATH"))
+    print("DEBUG: zeek_path =", ZEEK_PATH)
+
+    if not os.path.exists(ZEEK_PATH):
+        raise RuntimeError("Zeek binary missing")
 
     cmd = [
         "zeek",
@@ -195,3 +200,14 @@ async def analyze_pcap(file: UploadFile = File(...)):
 def check_zeek():
     import shutil
     return {"zeek_path": shutil.which("zeek")}
+
+@app.get("/debug")
+def debug():
+    import shutil, os
+    print("ZEKK EXISTS:", os.path.exists("/opt/zeek/bin/zeek"))
+    return {
+    "zeek_path": shutil.which("zeek"),
+    "PATH": os.environ.get("PATH"),
+    "opt_exists": os.path.exists("/opt/zeek/bin/zeek"),
+    "usr_local_exists": os.path.exists("/usr/local/zeek/bin/zeek"),
+}
