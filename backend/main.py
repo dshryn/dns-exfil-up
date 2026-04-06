@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 
-import shutil
+
 import subprocess
 import time
 import uuid
@@ -182,11 +182,6 @@ async def analyze_pcap(file: UploadFile = File(...)):
     finally:
         pass
 
-@app.get("/check-zeek")
-def check_zeek():
-    import shutil
-    return {"zeek_path": shutil.which("zeek")}
-
 @app.get("/debug")
 def debug():
     import shutil, os
@@ -197,3 +192,50 @@ def debug():
     "opt_exists": os.path.exists("/opt/zeek/bin/zeek"),
     "usr_local_exists": os.path.exists("/usr/local/zeek/bin/zeek"),
 }
+
+@app.get("/cron/cleanup")
+def cleanup():
+    now = time.time()
+    deleted = 0
+
+    # cleanup output folders
+    for folder in OUTPUT_DIR.iterdir():
+        if not folder.is_dir():
+            continue
+
+        age = now - folder.stat().st_mtime
+
+        # 1hr
+        if age > 3600:
+
+            # del files inside folder
+            for item in folder.rglob("*"):
+                if item.is_file():
+                    item.unlink(missing_ok=True)
+
+            # remove empty dirs
+            for item in sorted(folder.rglob("*"), reverse=True):
+                if item.is_dir():
+                    try:
+                        item.rmdir()
+                    except:
+                        pass
+
+            try:
+                folder.rmdir()
+            except:
+                pass
+
+            deleted += 1
+
+    # del uploads
+    for file in UPLOAD_DIR.iterdir():
+        if not file.is_file():
+            continue
+
+        age = now - file.stat().st_mtime
+
+        if age > 3600:
+            file.unlink(missing_ok=True)
+
+    return {"deleted": deleted}

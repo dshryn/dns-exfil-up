@@ -37,7 +37,7 @@ No signature matching. No known-bad domain lists. Pure structural and behavioral
                                 v
 +---------------------------------------------------------------+
 |                     INGESTION LAYER                           |
-|                  FastAPI Backend — /analyze                   |
+|                  FastAPI Backend: /analyze                    |
 |                                                               |
 |  - Validates .pcap / .pcapng extension                        |
 |  - Assigns UUID8 job_id                                       |
@@ -97,7 +97,7 @@ No signature matching. No known-bad domain lists. Pure structural and behavioral
                                 v
 +---------------------------------------------------------------+
 |           MACHINE LEARNING CLASSIFICATION                     |
-|       detection.analyze_records() — dns_rf_model.pkl          |
+|       detection.analyze_records() -> dns_rf_model.pkl         |
 |                                                               |
 |  StandardScaler applied before inference                      |
 |  RandomForestClassifier — 400 trees, depth 15                 |
@@ -158,11 +158,11 @@ MITRE ATT&CK TECHNIQUES DETECTED:
 
 | Feature               | Why It Matters                                                                      |
 | --------------------- | ----------------------------------------------------------------------------------- |
-| `length`              | Tunneling tools encode data in labels, producing queries >200–500 chars             |
+| `length`              | Tunneling tools encode data in labels, producing queries >200-500 chars             |
 | `num_digits`          | Hex-encoded payloads spike digit count far above any natural hostname               |
-| `num_subdomains`      | Legitimate domains rarely exceed 3–4 labels; exfil channels routinely stack 6-100+  |
-| `entropy`             | Encoded data scores >3.5 bits/char; human-readable hostnames score 2.0–2.8          |
-| `vowel_ratio`         | Natural hostnames carry ~35–45% vowels; encoding suppresses this toward zero        |
+| `num_subdomains`      | Legitimate domains rarely exceed 3-4 labels; exfil channels routinely stack 6-100+  |
+| `entropy`             | Encoded data scores >3.5 bits/char; human-readable hostnames score 2.0-2.8          |
+| `vowel_ratio`         | Natural hostnames carry ~35-45% vowels; encoding suppresses this toward zero        |
 | `unique_ratio`        | High lexical diversity in a single label is a strong DGA / encoding indicator       |
 | `longest_label`       | A single oversized label is a hallmark of base64-chunked payload delivery           |
 | `consonant_ratio`     | Complements vowel_ratio for full character distribution fingerprinting              |
