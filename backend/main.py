@@ -7,7 +7,9 @@ import subprocess
 import time
 import uuid
 from pathlib import Path
+
 import os
+os.environ["PATH"] = "/opt/zeek/bin:" + os.environ.get("PATH", "")
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
