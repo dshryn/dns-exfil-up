@@ -75,58 +75,40 @@ def to_wsl_path(path: Path) -> str:
     return path_str
 
 def run_zeek(pcap_path: Path, job_dir: Path) -> None:
-    if not pcap_path.exists():
-        raise HTTPException(status_code=500, detail="PCAP file missing before Zeek run")
-
-
-    ZEEK_PATH ="/opt/zeek/bin/zeek"
-
-    print("DEBUG: PATH =", os.environ.get("PATH"))
-    print("DEBUG: zeek_path =", ZEEK_PATH)
-
-    if not os.path.exists(ZEEK_PATH):
-        raise RuntimeError("Zeek binary missing")
+    ZEEK_PATH = "/opt/zeek/bin/zeek"
 
     cmd = [
-        "zeek",
+        ZEEK_PATH,
         "-C",
         "-r",
-        str(pcap_path.resolve()),
-        f"Log::default_logdir={job_dir}",
-        "LogAscii::use_json=T",
+        str(pcap_path),
+        "local",
+        "LogAscii::use_json=T"
     ]
 
-    print("Running Zeek:", " ".join(cmd))
-    print("Working directory:", job_dir)
+    print("Running:", cmd)
 
-    try:
-        
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=30
-        
+    result = subprocess.run(
+        cmd,
+        cwd=str(job_dir),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+        timeout=60
+    )
 
-        )
-    except subprocess.TimeoutExpired:
-        raise HTTPException(
-            status_code=500,
-            detail="Zeek execution timed out"
-        )
-
-    print("Zeek STDOUT:\n", result.stdout)
-    print("Zeek STDERR:\n", result.stderr)
+    print("stderr:", result.stderr)
 
     if result.returncode != 0:
         raise HTTPException(
-    status_code=500,
-    detail=f"Zeek failed. STDERR:\n{result.stderr.strip()}"
-)
+            status_code=500,
+            detail=result.stderr.decode() if isinstance(result.stderr, bytes) else result.stderr
+        )
 
     if not (job_dir / "dns.log").exists():
-        print("Warning: dns.log not generated")
-
+        raise HTTPException(
+            status_code=500,
+            detail="dns.log not generated"
+        )
 
 @app.post("/analyze")
 async def analyze_pcap(file: UploadFile = File(...)):
@@ -154,6 +136,8 @@ async def analyze_pcap(file: UploadFile = File(...)):
             out.write(content)
 
         run_zeek(pcap_path, job_dir)
+
+        print("FILES GENERATED:", list(job_dir.iterdir()))
         zeek_time = time.perf_counter() - zeek_start
 
         dns_log_path = job_dir / "dns.log"
