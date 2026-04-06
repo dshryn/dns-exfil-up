@@ -3,7 +3,7 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PATH="/opt/zeek/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
-# Install dependencies
+# deps
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Add Zeek repo
+# add Zeek repo
 RUN echo "deb http://download.opensuse.org/repositories/security:/zeek/xUbuntu_22.04/ /" \
     > /etc/apt/sources.list.d/zeek.list
 
@@ -24,17 +24,16 @@ RUN curl -fsSL \
     | gpg --dearmor \
     -o /etc/apt/trusted.gpg.d/zeek.gpg
 
-# Install Zeek
+# zeek
 RUN apt-get update && apt-get install -y zeek \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# FORCE CACHE BREAK (important)
+# force cache break
 COPY backend /app/backend
 RUN echo "build $(date)" > /build.txt
 
-# Install Python deps
 RUN pip3 install --no-cache-dir -r /app/backend/requirements.txt
 
 EXPOSE 8080
