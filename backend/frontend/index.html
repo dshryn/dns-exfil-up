@@ -5,28 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DNS-EXFIL Detector</title>
     <link rel="stylesheet" href="static/style.css" />
-    <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico" />
-    <link rel="icon" type="image/png" sizes="96x96" href="favicon-96x96.png" />
 
-    <!-- Apple -->
-    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <!-- Favicons -->
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="96x96"
+      href="/static/favicon-96x96.png"
+    />
 
-    <!-- Web manifest -->
-    <link rel="manifest" href="site.webmanifest" />
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
 
-    <!-- Android / PWA -->
+    <link rel="manifest" href="/static/site.webmanifest" />
+
     <link
       rel="icon"
       type="image/png"
       sizes="192x192"
-      href="web-app-manifest-192x192.png"
+      href="/static/web-app-manifest-192x192.png"
     />
     <link
       rel="icon"
       type="image/png"
       sizes="512x512"
-      href="web-app-manifest-512x512.png"
+      href="/static/web-app-manifest-512x512.png"
     />
   </head>
   <body>
@@ -43,7 +46,7 @@
     <main class="shell">
       <section class="panel upload-panel" id="uploadPanel">
         <div class="dropzone" id="dropZone">
-          <div class="drop-title">Upload PCAP</div>
+          <div class="drop-title">Upload DNS-PCAP</div>
           <div class="drop-subtitle">Drop a .pcap or .pcapng file here</div>
           <label class="choose-btn" for="fileInput">Choose File</label>
           <input id="fileInput" type="file" accept=".pcap,.pcapng" hidden />

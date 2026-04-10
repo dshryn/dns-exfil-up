@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import time
 
-
 import subprocess
 import time
 import uuid
@@ -106,11 +105,6 @@ def run_zeek(pcap_path: Path, job_dir: Path) -> None:
             detail=result.stderr.decode() if isinstance(result.stderr, bytes) else result.stderr
         )
 
-    if not (job_dir / "dns.log").exists():
-        raise HTTPException(
-            status_code=500,
-            detail="dns.log not generated"
-        )
 
 @app.post("/analyze")
 async def analyze_pcap(file: UploadFile = File(...)):
