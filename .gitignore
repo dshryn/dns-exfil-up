@@ -4,4 +4,6 @@ dataset/
 backend/__pycache__/
 backend/output/
 backend/uploads
+backend/models/dns_dataset.csv
 zeek_logs/
+results/

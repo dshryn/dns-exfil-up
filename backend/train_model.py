@@ -1,15 +1,21 @@
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
     roc_auc_score,
     average_precision_score,
     matthews_corrcoef,
     cohen_kappa_score,
     log_loss,
     brier_score_loss,
-    balanced_accuracy_score
+    balanced_accuracy_score,
+    RocCurveDisplay,
+    PrecisionRecallDisplay
 )
 from sklearn.model_selection import train_test_split
 import joblib
@@ -19,7 +25,10 @@ BASE = Path(__file__).resolve().parent
 PROJECT_ROOT = BASE.parent
 
 DATA_FILE = BASE / "models/dns_dataset.csv"
-MODEL_PATH = PROJECT_ROOT / "models" / "dns_rf_model.pkl"
+MODEL_PATH = BASE / "models" / "dns_rf_model.pkl"
+
+OUTPUT_DIR = PROJECT_ROOT / "outputs"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 
 def main():
@@ -59,8 +68,6 @@ def main():
     )
 
     model.fit(X_train_scaled, y_train)
-
-    # store feature names inside model
     model.feature_names_in_ = FEATURES
 
     y_prob = model.predict_proba(X_test_scaled)[:, 1]
@@ -68,28 +75,55 @@ def main():
     THRESHOLD = 0.65
     y_pred = (y_prob >= THRESHOLD).astype(int)
 
-    print("\nClassification Report:\n")
-    print(classification_report(y_test, y_pred))
+    print("\nMODEL PERFORMANCE\n")
 
-    print("\nConfusion Matrix:\n")
+    report = classification_report(y_test, y_pred, digits=3)
+    print(report)
+
     cm = confusion_matrix(y_test, y_pred)
-    print(cm)
-
     tn, fp, fn, tp = cm.ravel()
 
-    print("\nAdvanced Metrics:\n")
-    print("ROC-AUC:", roc_auc_score(y_test, y_prob))
-    print("PR-AUC:", average_precision_score(y_test, y_prob))
-    print("MCC:", matthews_corrcoef(y_test, y_pred))
-    print("Cohen Kappa:", cohen_kappa_score(y_test, y_pred))
-    print("Log Loss:", log_loss(y_test, y_prob))
-    print("Brier Score:", brier_score_loss(y_test, y_prob))
-    print("Balanced Accuracy:", balanced_accuracy_score(y_test, y_pred))
+    print("\nConfusion Matrix:")
+    print(cm)
 
-    specificity = tn / (tn + fp) if (tn + fp) else 0
-    print("Specificity:", specificity)
+    print("\nAdvanced Metrics:")
+    print(f"ROC-AUC: {roc_auc_score(y_test, y_prob):.4f}")
+    print(f"PR-AUC: {average_precision_score(y_test, y_prob):.4f}")
+    print(f"MCC: {matthews_corrcoef(y_test, y_pred):.4f}")
+    print(f"Cohen Kappa: {cohen_kappa_score(y_test, y_pred):.4f}")
+    print(f"Log Loss: {log_loss(y_test, y_prob):.4f}")
+    print(f"Brier Score: {brier_score_loss(y_test, y_prob):.4f}")
+    print(f"Balanced Accuracy: {balanced_accuracy_score(y_test, y_pred):.4f}")
 
-    # save together
+    specificity = tn / (tn + fp)
+    print(f"Specificity: {specificity:.4f}")
+
+
+    # confusion matrix
+
+    plt.figure()
+    sns.heatmap(cm, annot=True, fmt='d')
+    plt.title("Confusion Matrix - DNS Exfiltration Detection")
+    plt.xlabel("Predicted")
+    plt.ylabel("Actual")
+    plt.savefig(OUTPUT_DIR / "confusion_matrix.png")
+    plt.close()
+
+
+    # feature importance
+
+    importances = model.feature_importances_
+    feat_df = pd.Series(importances, index=FEATURES).sort_values()
+
+    plt.figure()
+    feat_df.plot(kind="barh")
+    plt.title("Feature Importance (Random Forest)")
+    plt.xlabel("Importance Score")
+    plt.tight_layout()
+    plt.savefig(OUTPUT_DIR / "feature_importance.png")
+    plt.close()
+
+    # save
     joblib.dump(
         {
             "model": model,
@@ -99,7 +133,7 @@ def main():
         MODEL_PATH
     )
 
-    print("\nMODEL SAVED")
+    print("\nMODEL and GRAPHS SAVED IN /outputs\n")
 
 
 if __name__ == "__main__":
